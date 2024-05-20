@@ -1,18 +1,15 @@
-// models/user.js
 const mongoose = require('mongoose');
 
-const UserSchema = new mongoose.Schema({
+
+const tableSchema = new mongoose.Schema({
   name: String,
-  email: String,
+  columns: [{
+    name: String,
+    dataType: String
+  }]
 });
 
-const MarksSchema = new mongoose.Schema({
-  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-  subject: String,
-  marks: String,
-});
 
-const UserModel = mongoose.model('User', UserSchema);
-const MarksModel = mongoose.model('Marks', MarksSchema);
+const TableModel = mongoose.model('Table', tableSchema);
 
-module.exports = { UserModel, MarksModel };
+module.exports = { UserModel, MarksModel, TableModel };

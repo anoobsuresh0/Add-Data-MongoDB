@@ -1,174 +1,57 @@
-import { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+import TableForm from "./components/TableForm";
 import "./App.css";
-
-type User = {
-  _id: string;
-  name: string;
-  email: string;
-};
-
-type Marks = {
-  _id: string;
-  userId: User;
-  subject: string;
-  marks: number;
-};
-
-function App() {
-  const [name, setName] = useState<string>("");
-  const [email, setEmail] = useState<string>("");
-  const [selectedUserId, setSelectedUserId] = useState<string>("");
-  const [subject, setSubject] = useState<string>("");
-  const [marks, setMarks] = useState<number | "">("");
-  const [marksData, setMarksData] = useState<Marks[]>([]);
-  const [users, setUsers] = useState<User[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
+const App = () => {
+  const [tables, setTables] = useState([]);
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      try {
-        const usersRes = await fetch("http://localhost:3000/users");
-        const usersData = await usersRes.json();
-        setUsers(usersData.users);
-
-        const marksRes = await fetch("http://localhost:3000/marks");
-        const marksData = await marksRes.json();
-        setMarksData(marksData.marks);
-      } catch (error) {
-        console.error("Error fetching data:", error);
-      }
-      setLoading(false);
-    };
-    fetchData();
+    fetchTables();
   }, []);
 
-  const handleUserSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
+  const fetchTables = async () => {
     try {
-      const res = await fetch("http://localhost:3000/add-user", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ name, email }),
-      });
-
-      const data = await res.text();
-      console.log(data);
-      // Optionally, you can fetch the updated user list here
+      const response = await axios.get("http://localhost:3000/api/tables");
+      if (Array.isArray(response.data)) {
+        setTables(response.data as any);
+      } else {
+        setError("Invalid data format: tables not found");
+      }
+      setError("");
     } catch (error) {
-      console.error("Error adding user:", error);
+      console.error("Error fetching tables:", error);
+      setError("Error fetching tables");
     }
   };
 
-  const handleMarksSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    try {
-      const res = await fetch("http://localhost:3000/add-marks", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ userId: selectedUserId, subject, marks }),
-      });
-
-      const data = await res.text();
-      console.log(data);
-      // Optionally, you can fetch the updated marks list here
-    } catch (error) {
-      console.error("Error adding marks:", error);
+  const renderTables = () => {
+    if (error) {
+      return <div className="error">Error: {error}</div>;
     }
+    return tables.map((table: { _id: string, name: string, columns: { _id: string, name: string, dataType: string }[] }) => (
+      <div key={table._id} className="table">
+        <h2>{table.name}</h2>
+        <ul>
+          {table.columns.map((column) => (
+            <li key={column._id}>
+              {column.name} - {column.dataType}
+            </li>
+          ))}
+        </ul>
+      </div>
+    ));
   };
-
-  if (loading) {
-    return <div>Loading...</div>;
-  }
 
   return (
-    <div>
-      <div style={{ display: "flex", alignItems: "center", gap: "100px" }}>
-        <form onSubmit={handleUserSubmit}>
-          <div>
-            <label>Name:</label>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-            />
-          </div>
-          <div>
-            <label>Email:</label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
-          </div>
-          <button style={{ marginTop: "20px" }} type="submit">
-            Submit User
-          </button>
-        </form>
+    <div className="app">
+      <h1>Dynamic Table and Column Creation</h1>
 
-        <form style={{ marginTop: "100px" }} onSubmit={handleMarksSubmit}>
-          <div>
-            <label>User:</label>
-            <select
-              value={selectedUserId}
-              onChange={(e) => setSelectedUserId(e.target.value)}
-            >
-              <option value="">Select a user</option>
-              {users.map((user) => (
-                <option key={user._id} value={user._id}>
-                  {user.name} - {user.email}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label>Subject:</label>
-            <input
-              type="text"
-              value={subject}
-              onChange={(e) => setSubject(e.target.value)}
-            />
-          </div>
-          <div>
-            <label>Marks:</label>
-            <input
-              type="number"
-              value={marks}
-              onChange={(e) => setMarks(Number(e.target.value))}
-            />
-          </div>
-          <button style={{ marginTop: "20px" }} type="submit">
-            Submit Marks
-          </button>
-        </form>
-      </div>
+      <TableForm fetchTables={fetchTables} />
 
-      <div>
-        <h1>Users</h1>
-        {users.map((user) => (
-          <p key={user._id}>
-            {user.name} - {user.email}
-          </p>
-        ))}
-      </div>
-
-      <div>
-        <h1>Marks</h1>
-        {marksData.map((mark) => (
-          <p key={mark._id}>
-             {mark.subject} -{" "}
-            {mark.marks}
-          </p>
-        ))}
-      </div>
+      <div className="table-container">{renderTables()}</div>
     </div>
   );
-}
+};
 
 export default App;
