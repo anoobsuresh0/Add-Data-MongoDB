@@ -26,6 +26,13 @@ app.get('/',async(req,res)=>{
 })
 
 
+app.post('/add-user',async(req,res)=>{
+    const {name,email} = req.body;
+    const newUser = new UserModel({name,email});
+    await newUser.save();
+    res.send("User added successfully")
+})
+
 
 app.listen(3000,()=>{
     console.log("App is running on port 3000")
